@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Campaign Tracker — Veyron</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
 :root{--brand:#D1206B;--brand-gray:#888;--r:8px;--r-sm:4px;--ui:'Space Grotesk',sans-serif;--mono:'Space Mono',monospace}
 [data-theme="dark"]{--bg:#0D0F1A;--surface:#141722;--surface-2:#1C2030;--border:#222638;--border-2:#2D3250;--accent:#D1206B;--accent-dim:rgba(209,32,107,0.10);--text-1:#E4E6F0;--text-2:#8890B5;--text-3:#4E566E;--green:#4ADE80;--orange:#FB923C;--red:#F87171;--tog-off:#2D3250;--shad:none}
@@ -51,26 +52,39 @@ body{background:var(--bg);color:var(--text-1);font-family:var(--ui);font-size:14
 .tog-knob{position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .tog.on .tog-knob{transform:translateX(18px)}
 .vdiv{width:1px;height:20px;background:var(--border)}
-.btn{padding:7px 12px;border:1px solid var(--border-2);border-radius:var(--r-sm);background:var(--surface-2);color:var(--text-2);font-family:var(--ui);font-size:12px;font-weight:500;cursor:pointer;transition:border-color .15s,color .15s,background .2s;white-space:nowrap}
-.btn:hover{border-color:var(--accent);color:var(--accent)}
-label.btn{display:inline-flex;align-items:center}
-#file-input{display:none}
-.controls{display:flex;align-items:flex-end;gap:10px;padding:14px 28px;border-bottom:1px solid var(--border);background:var(--bg);transition:background .2s}
+
+/* Controls */
+.controls{display:flex;align-items:flex-start;gap:10px;padding:14px 28px;border-bottom:1px solid var(--border);background:var(--bg);transition:background .2s;flex-wrap:wrap}
 .sel-wrap{position:relative}
 .sel-wrap>span{display:block;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
 select{appearance:none;background:var(--surface);border:1px solid var(--border-2);border-radius:var(--r);color:var(--text-1);font-family:var(--ui);font-size:13px;font-weight:500;padding:9px 34px 9px 13px;min-width:210px;cursor:pointer;outline:none;transition:border-color .15s,background .2s}
 select:hover,select:focus{border-color:var(--accent)}
 select:disabled{opacity:.4;cursor:not-allowed}
 .sel-wrap::after{content:'▾';position:absolute;right:11px;bottom:10px;color:var(--text-3);pointer-events:none;font-size:11px}
-.sep{color:var(--border-2);font-size:20px;margin-bottom:8px}
+.sep{color:var(--border-2);font-size:20px;margin-top:28px}
+
+/* Multi-select dropdown */
+.msel-wrap{position:relative}
+.msel-wrap>span{display:block;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
+.msel-btn{appearance:none;background:var(--surface);border:1px solid var(--border-2);border-radius:var(--r);color:var(--text-1);font-family:var(--ui);font-size:13px;font-weight:500;padding:9px 34px 9px 13px;min-width:230px;text-align:left;cursor:pointer;outline:none;transition:border-color .15s;position:relative}
+.msel-btn:hover,.msel-btn.open{border-color:var(--accent)}
+.msel-btn:disabled{opacity:.4;cursor:not-allowed}
+.msel-btn::after{content:'▾';position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:11px}
+.msel-panel{position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border-2);border-radius:var(--r);box-shadow:0 10px 28px rgba(0,0,0,.18);max-height:280px;overflow-y:auto;min-width:240px;z-index:20;padding:6px;display:none}
+.msel-panel.open{display:block}
+.msel-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;white-space:nowrap}
+.msel-item:hover{background:var(--accent-dim)}
+.msel-item input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;flex-shrink:0}
+.msel-actions{display:flex;gap:12px;padding:7px 8px 3px;border-top:1px solid var(--border);margin-top:4px}
+.msel-action-btn{font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:var(--ui);font-weight:600;padding:0}
+
 .state-box{padding:64px 28px;text-align:center}
 .state-box h2{font-size:15px;font-weight:600;margin-bottom:8px}
 .state-box p{color:var(--text-2);font-size:13px;line-height:1.65;max-width:380px;margin:0 auto}
 .spinner{width:28px;height:28px;border:2px solid var(--border-2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 18px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.upload-btn{display:inline-block;margin-top:18px;padding:9px 18px;border:1px solid var(--accent);border-radius:var(--r);color:var(--accent);cursor:pointer;font-size:13px;font-weight:500;transition:background .15s}
-.upload-btn:hover{background:var(--accent-dim)}
 .prompt{padding:64px 28px;text-align:center;color:var(--text-3);font-size:13px}
+
 .camp-hdr{display:flex;align-items:center;gap:12px;padding:13px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg);transition:background .2s}
 .camp-title{font-size:15px;font-weight:600}
 .date-rng{font-size:12px;color:var(--text-2)}
@@ -85,8 +99,9 @@ select:disabled{opacity:.4;cursor:not-allowed}
 [data-theme="light"] .chip-paused{background:rgba(217,119,6,.1);color:#D97706}
 [data-theme="light"] .chip-pending{background:rgba(80,80,106,.1);color:#50506A}
 [data-theme="light"] .chip-done{background:rgba(220,38,38,.1);color:#DC2626}
-.tbl-outer{overflow-x:auto;padding:0 28px 40px}
-table{width:100%;border-collapse:collapse;min-width:1480px}
+
+.tbl-outer{overflow-x:auto;padding:0 28px 28px}
+table{width:100%;border-collapse:collapse;min-width:1280px}
 thead th{background:var(--surface-2);color:var(--text-3);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);transition:background .2s}
 th.r,td.r{text-align:right}
 thead th:first-child{position:sticky;left:0;z-index:2;background:var(--surface-2);border-right:1px solid var(--border)}
@@ -114,6 +129,22 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
 .budg-pct{font-size:10px;color:var(--text-3);margin-top:3px;display:block}
 .dash-lnk{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:var(--r-sm);border:1px solid var(--border-2);color:var(--text-3);font-size:11px;text-decoration:none;transition:all .15s}
 .dash-lnk:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+
+/* Chart section */
+#chart-section{display:none;padding:24px 28px 48px;border-top:1px solid var(--border)}
+.chart-title{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px}
+.chart-sub{font-size:11px;color:var(--text-3);margin-bottom:16px}
+.plat-filter{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px}
+.plat-pill{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-2);transition:all .15s;user-select:none}
+.plat-pill.active{border-color:transparent}
+.chart-body{display:flex;gap:36px;align-items:center;flex-wrap:wrap}
+.chart-canvas-wrap{width:220px;height:220px;flex-shrink:0;position:relative}
+.chart-legend{display:flex;flex-direction:column;gap:9px;font-size:12px;min-width:220px}
+.legend-item{display:flex;align-items:center;gap:9px}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.legend-label{color:var(--text-2)}
+.legend-val{font-family:var(--mono);margin-left:auto;padding-left:18px;color:var(--text-1);font-weight:600;font-size:11px}
+.legend-total{display:flex;align-items:center;gap:9px;padding-top:9px;margin-top:3px;border-top:1px solid var(--border);font-weight:600}
 </style>
 </head>
 <body>
@@ -156,127 +187,82 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
         <button class="tog on" id="tog-theme" onclick="toggleTheme()"><span class="tog-knob"></span></button>
         <span class="tog-lbl on" id="lbl-light">☀</span>
       </div>
-      <div class="vdiv"></div>
-      <button class="btn" onclick="loadFromGitHub()">↻ Refresh</button>
-      <label for="file-input" class="btn" title="Upload Excel manually as fallback">↑ Upload</label>
-      <input type="file" id="file-input" accept=".xlsx,.xlsm" onchange="handleUpload(event)">
     </div>
   </div>
+
   <div class="controls">
     <div class="sel-wrap">
       <span>Client</span>
       <select id="client-sel" onchange="onClient()"><option value="">— Select client —</option></select>
     </div>
     <div class="sep">›</div>
-    <div class="sel-wrap">
+    <div class="msel-wrap" id="camp-msel-wrap">
       <span>Campaign</span>
-      <select id="camp-sel" onchange="onCampaign()" disabled><option value="">— Select campaign —</option></select>
+      <button class="msel-btn" id="camp-msel-btn" disabled onclick="toggleCampPanel()">Select campaigns</button>
+      <div class="msel-panel" id="camp-msel-panel"></div>
     </div>
   </div>
+
   <div id="main">
     <div class="state-box"><div class="spinner"></div><h2>Loading data</h2></div>
+  </div>
+
+  <div id="chart-section">
+    <div class="chart-title">Spend by Platform</div>
+    <div class="chart-sub">Based on Spent (NTC), converted to selected display currency</div>
+    <div class="plat-filter" id="plat-filter"></div>
+    <div class="chart-body">
+      <div class="chart-canvas-wrap"><canvas id="spend-chart"></canvas></div>
+      <div class="chart-legend" id="chart-legend"></div>
+    </div>
   </div>
 </div>
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/haitham-sudo/campaign-tracker/main/data.json';
+const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/data.json';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SAR_RATE = 3.76;
 const state = { cur: 'USD' };
 let rows = [];
+let selectedCampaigns = new Set();
+let selectedPlatforms = new Set();
+let chartInstance = null;
 
 // ── Crypto helpers ──
-function b64ToBytes(b64) {
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
-
-async function deriveKey(passcode, salt) {
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(passcode), 'PBKDF2', false, ['deriveKey']
-  );
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false, ['decrypt']
-  );
-}
-
-async function decryptPayload(encrypted, passcode) {
-  const salt       = b64ToBytes(encrypted.salt);
-  const iv         = b64ToBytes(encrypted.iv);
-  const ciphertext = b64ToBytes(encrypted.data);
-  const key        = await deriveKey(passcode, salt);
-  const decrypted  = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
-  return JSON.parse(new TextDecoder().decode(decrypted));
-}
+function b64ToBytes(b64){const bin=atob(b64);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return bytes;}
+async function deriveKey(passcode,salt){const keyMaterial=await crypto.subtle.importKey('raw',new TextEncoder().encode(passcode),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},keyMaterial,{name:'AES-GCM',length:256},false,['decrypt']);}
+async function decryptPayload(encrypted,passcode){const salt=b64ToBytes(encrypted.salt),iv=b64ToBytes(encrypted.iv),ciphertext=b64ToBytes(encrypted.data);const key=await deriveKey(passcode,salt);const decrypted=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ciphertext);return JSON.parse(new TextDecoder().decode(decrypted));}
 
 // ── Gate ──
-async function checkPasscode() {
-  const passcode = document.getElementById('pc-input').value;
-  const btn = document.getElementById('gate-btn');
-  const err = document.getElementById('pc-err');
-  const inp = document.getElementById('pc-input');
-
-  if (!passcode) return;
-
-  btn.classList.add('loading');
-  btn.disabled = true;
-  err.textContent = '';
-
-  try {
-    const res = await fetch(GITHUB_RAW_URL + '?t=' + Date.now());
-    if (!res.ok) throw new Error(`Could not reach data source (HTTP ${res.status})`);
-    const encrypted = await res.json();
-    const data = await decryptPayload(encrypted, passcode);
-
-    // Success — store passcode for refresh, show app
-    sessionStorage.setItem('veyron_key', passcode);
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('app').style.display  = 'block';
+async function checkPasscode(){
+  const passcode=document.getElementById('pc-input').value;
+  const btn=document.getElementById('gate-btn'),err=document.getElementById('pc-err'),inp=document.getElementById('pc-input');
+  if(!passcode)return;
+  btn.classList.add('loading');btn.disabled=true;err.textContent='';
+  try{
+    const res=await fetch(GITHUB_RAW_URL+'?t='+Date.now());
+    if(!res.ok)throw new Error(`Could not reach data source (HTTP ${res.status})`);
+    const encrypted=await res.json();
+    const data=await decryptPayload(encrypted,passcode);
+    sessionStorage.setItem('veyron_key',passcode);
+    document.getElementById('gate').style.display='none';
+    document.getElementById('app').style.display='block';
     ingestData(data);
-  } catch(e) {
-    const msg = e.message.includes('HTTP') ? e.message : 'Incorrect passcode.';
-    err.textContent = msg;
-    inp.classList.add('err');
-    setTimeout(() => inp.classList.remove('err'), 400);
-    inp.value = '';
-    inp.focus();
-  } finally {
-    btn.classList.remove('loading');
-    btn.disabled = false;
-  }
+  }catch(e){
+    err.textContent=e.message.includes('HTTP')?e.message:'Incorrect passcode.';
+    inp.classList.add('err');setTimeout(()=>inp.classList.remove('err'),400);
+    inp.value='';inp.focus();
+  }finally{btn.classList.remove('loading');btn.disabled=false;}
 }
-
-// Restore session if already authenticated
-(async () => {
-  const key = sessionStorage.getItem('veyron_key');
-  if (key) {
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('app').style.display  = 'block';
-    loadFromGitHub();
-  }
+(async()=>{
+  const key=sessionStorage.getItem('veyron_key');
+  if(key){document.getElementById('gate').style.display='none';document.getElementById('app').style.display='block';loadFromGitHub();}
 })();
 
 // ── Platform styles ──
-const PLAT = {
-  'meta':        {bg:'#1877F2',color:'#fff'},
-  'instagram':   {bg:'#C13584',color:'#fff'},
-  'tiktok':      {bg:'#161823',color:'#69C9D0',border:'1px solid #2a2a2a'},
-  'x (twitter)': {bg:'#111',   color:'#E7E7E7',border:'1px solid #333'},
-  'linkedin':    {bg:'#0077B5',color:'#fff'},
-  'snapchat':    {bg:'#FFFC00',color:'#111'},
-  'youtube':     {bg:'#FF0000',color:'#fff'},
-  'uac':         {bg:'#4285F4',color:'#fff'},
-  'demandgen':   {bg:'#34A853',color:'#fff'},
-  'sem':         {bg:'#FBBC04',color:'#111'},
-};
-
+const PLAT={'meta':{bg:'#1877F2',color:'#fff'},'instagram':{bg:'#C13584',color:'#fff'},'tiktok':{bg:'#161823',color:'#69C9D0',border:'1px solid #2a2a2a'},'x (twitter)':{bg:'#111',color:'#E7E7E7',border:'1px solid #333'},'linkedin':{bg:'#0077B5',color:'#fff'},'snapchat':{bg:'#FFFC00',color:'#111'},'youtube':{bg:'#FF0000',color:'#fff'},'uac':{bg:'#4285F4',color:'#fff'},'demandgen':{bg:'#34A853',color:'#fff'},'sem':{bg:'#FBBC04',color:'#111'}};
 function platStyle(p){const k=p.toLowerCase();for(const[key,val]of Object.entries(PLAT))if(k.includes(key))return val;return{bg:'#2D3250',color:'#C4C9E0'};}
 function conv(v,fc){const n=Number(v);if(state.cur==='SAR'&&fc==='USD')return n*SAR_RATE;if(state.cur==='USD'&&fc==='SAR')return n/SAR_RATE;return n;}
 function sym(){return state.cur==='USD'?'$':'SAR ';}
@@ -288,11 +274,11 @@ function fmtCost(v,fc='USD'){if(!isNum(v))return '<span class="dim">—</span>';
 function fmtDays(v){if(!isNum(v))return '<span class="dim">—</span>';const n=Math.round(Number(v));if(n<=0)return '<span class="days days-done">Ended</span>';const cls=n<=3?'days-crit':n<=7?'days-warn':'days-ok';return`<span class="days ${cls}">${n}d</span>`;}
 function fmtStatus(s){const k=(s||'').toLowerCase();const cls=k.includes('on going')||k==='ongoing'?'chip-ongoing':k==='paused'?'chip-paused':k==='pending'?'chip-pending':k==='done'?'chip-done':'chip-default';return`<span class="chip ${cls}">${s||'—'}</span>`;}
 function budgetCell(spent,total,remaining,fc){const r=fmtMoney(remaining,fc);if(!isNum(spent)||!isNum(total)||Number(total)<=0)return`<div class="budg"><span class="budg-val">${r}</span></div>`;const pct=Math.min(100,Math.max(0,(Number(spent)/Number(total))*100));const fc2=pct>90?'#F87171':pct>75?'#FB923C':'#4ADE80';return`<div class="budg"><span class="budg-val">${r}</span><div class="budg-track"><div class="budg-fill" style="width:${pct.toFixed(1)}%;background:${fc2}"></div></div><span class="budg-pct">${pct.toFixed(0)}% spent</span></div>`;}
-
 function setLastUpdated(iso){const d=new Date(iso+'Z');const f=d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'});document.getElementById('lu-text').textContent=`Last Updated: ${f}`;document.getElementById('last-updated').classList.add('has-data');}
 
-function renderTable(campName,data){
-  if(!data.length){document.getElementById('main').innerHTML='<div class="prompt">No rows found.</div>';return;}
+// ── Campaign section (table) builder ──
+function buildCampaignSection(campName,data){
+  if(!data.length)return `<div class="prompt">No rows found for ${campName}.</div>`;
   const sc={};data.forEach(r=>{sc[r.status]=(sc[r.status]||0)+1;});
   const chips=Object.entries(sc).map(([s,n])=>`${fmtStatus(s)}<span style="font-size:10px;color:var(--text-3);margin-left:3px">${n}</span>`).join('<span style="color:var(--border-2);margin:0 5px">·</span>');
   const starts=data.map(r=>r.start).filter(Boolean),ends=data.map(r=>r.end).filter(Boolean);
@@ -307,19 +293,18 @@ function renderTable(campName,data){
       <td style="font-size:11px;color:var(--text-2)">${fmtDate(r.start)||'—'}</td>
       <td style="font-size:11px;color:var(--text-2)">${fmtDate(r.end)||'—'}</td>
       <td><span class="obj">${r.objective||'<span class="dim">—</span>'}</span></td>
-      <td class="r"><span class="num">${fmtCost(r.costDash,r.currency)}</span></td>
+      <td class="r"><span class="num">${fmtCost(r.costNTC,r.currency)}</span></td>
       <td class="r"><span class="num">${fmt(r.currInv)}</span></td>
       <td class="r"><span class="num">${fmt(r.reqInvNTM)}</span></td>
       <td class="r"><span class="num">${fmt(r.expInv)}</span></td>
       <td class="r">${fmtDays(r.days)}</td>
-      <td class="r"><span class="num">${fmtMoney(r.budgetDash,r.currency)}</span></td>
       <td class="r"><span class="num">${fmtMoney(r.budgetNTC,r.currency)}</span></td>
-      <td class="r"><span class="num">${fmtMoney(r.spentDash,r.currency)}</span></td>
-      <td>${budgetCell(r.spentDash,r.budgetDash,r.remaining,r.currency)}</td>
+      <td class="r"><span class="num">${fmtMoney(r.spentNTC,r.currency)}</span></td>
+      <td>${budgetCell(r.spentNTC,r.budgetNTC,r.remaining,r.currency)}</td>
       <td>${lnk}</td>
     </tr>`;
   }).join('');
-  document.getElementById('main').innerHTML=`
+  return `
     <div class="camp-hdr">
       <span class="camp-title">${campName||'(unnamed)'}</span>
       ${dateRange?`<span class="date-rng">${dateRange}</span>`:''}
@@ -330,41 +315,203 @@ function renderTable(campName,data){
     <div class="tbl-outer"><table>
       <thead><tr>
         <th>Platform</th><th>Status</th><th>Start</th><th>End</th><th>Objective</th>
-        <th class="r">Cost / X</th><th class="r">Current Inv.</th>
+        <th class="r">Cost / X (NTC)</th><th class="r">Current Inv.</th>
         <th class="r">Req. Inv. (NTM)</th><th class="r">Expected Inv.</th>
-        <th class="r">Days Left</th><th class="r">Budget (Dash)</th>
-        <th class="r">Budget (NTC)</th><th class="r">Spent (Dash)</th>
-        <th>Remaining</th><th></th>
+        <th class="r">Days Left</th><th class="r">Budget (NTC)</th>
+        <th class="r">Spent (NTC)</th><th>Remaining</th><th></th>
       </tr></thead>
       <tbody>${tbody}</tbody>
     </table></div>`;
 }
 
-function rerender(){const c=document.getElementById('client-sel').value,p=document.getElementById('camp-sel').value;if(!c||!p)return;renderTable(p,rows.filter(r=>r.client===c&&r.campaign===p));}
-function populateClients(){const clients=[...new Set(rows.map(r=>r.client))].sort(),sel=document.getElementById('client-sel'),prev=sel.value;sel.innerHTML='<option value="">— Select client —</option>';clients.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});return prev;}
-function onClient(preserve){const client=document.getElementById('client-sel').value,campSel=document.getElementById('camp-sel');campSel.innerHTML='<option value="">— Select campaign —</option>';campSel.disabled=!client;if(!client){document.getElementById('main').innerHTML='<div class="prompt">Select a client and campaign above.</div>';return[];}if(!preserve)document.getElementById('main').innerHTML='<div class="prompt">Select a campaign above.</div>';const camps=[...new Set(rows.filter(r=>r.client===client).map(r=>r.campaign))];camps.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c||'(unnamed)';campSel.appendChild(o);});if(camps.length===1&&!preserve){campSel.value=camps[0];onCampaign();}return camps;}
-function onCampaign(){const c=document.getElementById('client-sel').value,p=document.getElementById('camp-sel').value;if(!p){document.getElementById('main').innerHTML='<div class="prompt">Select a campaign above.</div>';return;}renderTable(p,rows.filter(r=>r.client===c&&r.campaign===p));}
-
-function ingestData(data){
-  rows=data.rows||[];
-  const pc=document.getElementById('client-sel').value,pp=document.getElementById('camp-sel').value;
-  populateClients();
-  if(data.updated_at)setLastUpdated(data.updated_at);
-  const csel=document.getElementById('client-sel');
-  if(pc&&[...csel.options].some(o=>o.value===pc)){
-    csel.value=pc;const camps=onClient(true);
-    const psel=document.getElementById('camp-sel');
-    if(pp&&camps.includes(pp)){psel.value=pp;onCampaign();return;}
-  }
-  document.getElementById('main').innerHTML='<div class="prompt">Select a client and campaign above.</div>';
+// ── Client / campaign selection ──
+function populateClients(){
+  const clients=[...new Set(rows.map(r=>r.client))].sort();
+  const sel=document.getElementById('client-sel');
+  sel.innerHTML='<option value="">— Select client —</option>';
+  clients.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
 }
 
-function showError(msg){document.getElementById('main').innerHTML=`<div class="state-box"><h2>Could not load data</h2><p>${msg}</p><label for="file-input" class="upload-btn">↑ Upload Excel file manually</label></div>`;}
+function onClient(){
+  const client=document.getElementById('client-sel').value;
+  selectedCampaigns=new Set();
+  selectedPlatforms=new Set();
+  const btn=document.getElementById('camp-msel-btn');
+  btn.disabled=!client;
+  btn.textContent='Select campaigns';
+  closeCampPanel();
+  if(!client){
+    document.getElementById('main').innerHTML='<div class="prompt">Select a client and campaign(s) above.</div>';
+    hideChart();
+    return;
+  }
+  buildCampPanel(client);
+  document.getElementById('main').innerHTML='<div class="prompt">Select one or more campaigns above.</div>';
+  hideChart();
+}
 
+function buildCampPanel(client){
+  const camps=[...new Set(rows.filter(r=>r.client===client).map(r=>r.campaign))];
+  const panel=document.getElementById('camp-msel-panel');
+  panel.innerHTML = camps.map(c=>`
+    <label class="msel-item">
+      <input type="checkbox" value="${c.replace(/"/g,'&quot;')}" onchange="toggleCampaign(this)">
+      <span>${c||'(unnamed)'}</span>
+    </label>`).join('') + `
+    <div class="msel-actions">
+      <button class="msel-action-btn" onclick="selectAllCamps()">Select all</button>
+      <button class="msel-action-btn" onclick="clearAllCamps()">Clear</button>
+    </div>`;
+}
+
+function toggleCampPanel(){
+  const panel=document.getElementById('camp-msel-panel');
+  const btn=document.getElementById('camp-msel-btn');
+  const open=panel.classList.toggle('open');
+  btn.classList.toggle('open',open);
+}
+function closeCampPanel(){
+  document.getElementById('camp-msel-panel').classList.remove('open');
+  document.getElementById('camp-msel-btn').classList.remove('open');
+}
+document.addEventListener('click',e=>{
+  const wrap=document.getElementById('camp-msel-wrap');
+  if(wrap && !wrap.contains(e.target)) closeCampPanel();
+});
+
+function toggleCampaign(checkbox){
+  if(checkbox.checked) selectedCampaigns.add(checkbox.value);
+  else selectedCampaigns.delete(checkbox.value);
+  updateCampBtnLabel();
+  selectedPlatforms=new Set(); // reset platform filter scope on campaign change
+  renderAll();
+}
+function selectAllCamps(){
+  const panel=document.getElementById('camp-msel-panel');
+  panel.querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=true;selectedCampaigns.add(cb.value);});
+  updateCampBtnLabel();selectedPlatforms=new Set();renderAll();
+}
+function clearAllCamps(){
+  const panel=document.getElementById('camp-msel-panel');
+  panel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  selectedCampaigns=new Set();
+  updateCampBtnLabel();selectedPlatforms=new Set();renderAll();
+}
+function updateCampBtnLabel(){
+  const btn=document.getElementById('camp-msel-btn');
+  const n=selectedCampaigns.size;
+  btn.textContent = n===0?'Select campaigns':n===1?[...selectedCampaigns][0]:`${n} campaigns selected`;
+}
+
+// ── Main render ──
+function renderAll(){
+  if(selectedCampaigns.size===0){
+    document.getElementById('main').innerHTML='<div class="prompt">Select one or more campaigns above.</div>';
+    hideChart();
+    return;
+  }
+  const client=document.getElementById('client-sel').value;
+  const sections=[...selectedCampaigns].map(camp=>{
+    const data=rows.filter(r=>r.client===client&&r.campaign===camp);
+    return buildCampaignSection(camp,data);
+  }).join('<div style="height:8px"></div>');
+  document.getElementById('main').innerHTML=sections;
+  renderChartSection();
+}
+
+// ── Chart ──
+function getScopeRows(){
+  const client=document.getElementById('client-sel').value;
+  return rows.filter(r=>r.client===client&&selectedCampaigns.has(r.campaign));
+}
+function renderChartSection(){
+  const scope=getScopeRows();
+  const platforms=[...new Set(scope.map(r=>r.platform))];
+  if(selectedPlatforms.size===0) selectedPlatforms=new Set(platforms); // default: all active
+
+  const filterEl=document.getElementById('plat-filter');
+  filterEl.innerHTML=platforms.map(p=>{
+    const ps=platStyle(p);
+    const active=selectedPlatforms.has(p);
+    const style=active?`background:${ps.bg};color:${ps.color}`:'';
+    return `<div class="plat-pill ${active?'active':''}" style="${style}" onclick="togglePlatformPill(this,'${p.replace(/'/g,"\\'")}')">${p}</div>`;
+  }).join('');
+
+  document.getElementById('chart-section').style.display='block';
+  updateChart();
+}
+function togglePlatformPill(el,platform){
+  if(selectedPlatforms.has(platform)) selectedPlatforms.delete(platform);
+  else selectedPlatforms.add(platform);
+  renderChartSection();
+}
+function hideChart(){
+  document.getElementById('chart-section').style.display='none';
+  if(chartInstance){chartInstance.destroy();chartInstance=null;}
+}
+function updateChart(){
+  const scope=getScopeRows().filter(r=>selectedPlatforms.has(r.platform));
+  const totals={};
+  scope.forEach(r=>{
+    if(!isNum(r.spentNTC))return;
+    const val=conv(r.spentNTC,r.currency);
+    totals[r.platform]=(totals[r.platform]||0)+val;
+  });
+  const labels=Object.keys(totals);
+  const values=labels.map(l=>totals[l]);
+  const colors=labels.map(l=>platStyle(l).bg);
+  const total=values.reduce((a,b)=>a+b,0);
+
+  const ctx=document.getElementById('spend-chart').getContext('2d');
+  if(chartInstance) chartInstance.destroy();
+
+  if(labels.length===0){
+    document.getElementById('chart-legend').innerHTML='<div class="dim" style="font-size:12px">No spend data for this selection.</div>';
+    return;
+  }
+
+  chartInstance=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data:values,backgroundColor:colors,borderColor:getComputedStyle(document.documentElement).getPropertyValue('--bg'),borderWidth:2}]},
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${sym()}${c.parsed.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`}}},cutout:'62%'}
+  });
+
+  const legend=document.getElementById('chart-legend');
+  legend.innerHTML = labels.map((l,i)=>{
+    const pct=total>0?((values[i]/total)*100).toFixed(1):'0.0';
+    return `<div class="legend-item">
+      <span class="legend-dot" style="background:${colors[i]}"></span>
+      <span class="legend-label">${l}</span>
+      <span class="legend-val">${sym()}${values[i].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} · ${pct}%</span>
+    </div>`;
+  }).join('') + `
+    <div class="legend-item legend-total">
+      <span class="legend-dot" style="background:var(--accent)"></span>
+      <span class="legend-label">Total</span>
+      <span class="legend-val">${sym()}${total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+    </div>`;
+}
+
+// ── Data loading ──
+function ingestData(data){
+  rows=data.rows||[];
+  selectedCampaigns=new Set();
+  selectedPlatforms=new Set();
+  populateClients();
+  if(data.updated_at) setLastUpdated(data.updated_at);
+  document.getElementById('client-sel').value='';
+  document.getElementById('camp-msel-btn').disabled=true;
+  document.getElementById('camp-msel-btn').textContent='Select campaigns';
+  document.getElementById('main').innerHTML='<div class="prompt">Select a client and campaign(s) above.</div>';
+  hideChart();
+}
+function showError(msg){
+  document.getElementById('main').innerHTML=`<div class="state-box"><h2>Could not load data</h2><p>${msg}</p></div>`;
+}
 async function loadFromGitHub(){
+  document.getElementById('main').innerHTML='<div class="state-box"><div class="spinner"></div><h2>Loading data</h2></div>';
   const passcode=sessionStorage.getItem('veyron_key');
   if(!passcode){showError('Session expired. Please refresh the page.');return;}
-  document.getElementById('main').innerHTML='<div class="state-box"><div class="spinner"></div><h2>Refreshing…</h2></div>';
   try{
     const res=await fetch(GITHUB_RAW_URL+'?t='+Date.now());
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
@@ -374,36 +521,9 @@ async function loadFromGitHub(){
   }catch(e){showError(`Failed to load: ${e.message}`);}
 }
 
-// Excel upload fallback (unencrypted — for local testing)
-function handleUpload(e){
-  const file=e.target.files[0];if(!file)return;
-  if(typeof XLSX==='undefined'){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=()=>parseExcelFile(file);document.head.appendChild(s);}
-  else parseExcelFile(file);
-}
-function parseExcelFile(file){
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    try{
-      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
-      const ws=wb.Sheets['Running Campaigns'];if(!ws)throw new Error('Sheet "Running Campaigns" not found');
-      const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      let lc='',lcamp='';const parsed=[];
-      for(let i=2;i<raw.length;i++){
-        const r=raw[i];const c=String(r[0]||'').trim(),camp=String(r[1]||'').trim();
-        if(c)lc=c;if(camp)lcamp=camp;
-        const plat=String(r[4]||'').trim();if(!plat||!lc)continue;
-        function sn(v){if(v===''||v===null||v===undefined)return null;if(typeof v==='object')return null;const s=String(v).trim();if(!s||s==='-'||s.startsWith('#'))return null;const n=Number(s);return isFinite(n)?n:null;}
-        function sd(n){if(!n||typeof n!=='number'||n<1)return null;return new Date(Math.round((n-25569)*86400000)).toISOString().split('T')[0];}
-        parsed.push({client:lc,campaign:lcamp,status:String(r[3]||'').trim(),platform:plat,start:sd(r[5]),end:sd(r[6]),dashboard:String(r[8]||'').trim(),objective:String(r[10]||'').trim(),costDash:sn(r[11]),currInv:sn(r[14]),reqInvNTM:sn(r[15]),expInv:sn(r[17]),days:sn(r[18]),budgetDash:sn(r[20]),budgetNTC:sn(r[22]),spentDash:sn(r[23]),remaining:sn(r[25]),currency:(String(r[37]||'').trim())||'USD'});
-      }
-      ingestData({rows:parsed,updated_at:new Date().toISOString().replace('Z','')});
-    }catch(err){showError(err.message);}
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function toggleCur(){state.cur=state.cur==='USD'?'SAR':'USD';const u=state.cur==='USD';document.getElementById('tog-cur').classList.toggle('on',u);document.getElementById('lbl-usd').classList.toggle('on',u);document.getElementById('lbl-sar').classList.toggle('on',!u);rerender();}
-function toggleTheme(){const html=document.documentElement,d=html.dataset.theme==='dark';html.dataset.theme=d?'light':'dark';document.getElementById('tog-theme').classList.toggle('on',!d);document.getElementById('lbl-dark').classList.toggle('on',d);document.getElementById('lbl-light').classList.toggle('on',!d);}
+// ── Toggles ──
+function toggleCur(){state.cur=state.cur==='USD'?'SAR':'USD';const u=state.cur==='USD';document.getElementById('tog-cur').classList.toggle('on',u);document.getElementById('lbl-usd').classList.toggle('on',u);document.getElementById('lbl-sar').classList.toggle('on',!u);renderAll();}
+function toggleTheme(){const html=document.documentElement,d=html.dataset.theme==='dark';html.dataset.theme=d?'light':'dark';document.getElementById('tog-theme').classList.toggle('on',!d);document.getElementById('lbl-dark').classList.toggle('on',d);document.getElementById('lbl-light').classList.toggle('on',!d);if(chartInstance)updateChart();}
 </script>
 </body>
 </html>
