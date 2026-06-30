@@ -134,9 +134,9 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
 #chart-section{display:none;padding:24px 28px 48px;border-top:1px solid var(--border)}
 .chart-title{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px}
 .chart-sub{font-size:11px;color:var(--text-3);margin-bottom:16px}
-.plat-filter{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px}
-.plat-pill{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-2);transition:all .15s;user-select:none}
-.plat-pill.active{border-color:transparent}
+.th-clickable{cursor:pointer;user-select:none;transition:background .15s,color .15s}
+.th-clickable:hover{background:var(--accent-dim);color:var(--accent)}
+.th-active{background:var(--accent-dim);color:var(--accent)}
 .chart-body{display:flex;gap:36px;align-items:center;flex-wrap:wrap}
 .chart-canvas-wrap{width:220px;height:220px;flex-shrink:0;position:relative}
 .chart-legend{display:flex;flex-direction:column;gap:9px;font-size:12px;min-width:220px}
@@ -208,9 +208,8 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
   </div>
 
   <div id="chart-section">
-    <div class="chart-title">Spend by Platform</div>
-    <div class="chart-sub">Based on Spent (NTC), converted to selected display currency</div>
-    <div class="plat-filter" id="plat-filter"></div>
+    <div class="chart-title" id="chart-title">Spend by Platform</div>
+    <div class="chart-sub" id="chart-sub">Click a column header in the table to chart that metric</div>
     <div class="chart-body">
       <div class="chart-canvas-wrap"><canvas id="spend-chart"></canvas></div>
       <div class="chart-legend" id="chart-legend"></div>
@@ -227,8 +226,19 @@ const SAR_RATE = 3.76;
 const state = { cur: 'USD' };
 let rows = [];
 let selectedCampaigns = new Set();
-let selectedPlatforms = new Set();
+let selectedMetric = 'spentNTC';
 let chartInstance = null;
+
+const METRICS = {
+  costNTC:    { label: 'Cost / X (NTC)',     money: true  },
+  currInv:    { label: 'Current Inventory',  money: false },
+  reqInvNTM:  { label: 'Req. Inventory (NTM)', money: false },
+  expInv:     { label: 'Expected Inventory', money: false },
+  days:       { label: 'Days Remaining',     money: false },
+  budgetNTC:  { label: 'Budget (NTC)',       money: true  },
+  spentNTC:   { label: 'Spent (NTC)',        money: true  },
+  remaining:  { label: 'Budget Remaining',   money: true  },
+};
 
 // ── Crypto helpers ──
 function b64ToBytes(b64){const bin=atob(b64);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return bytes;}
@@ -245,13 +255,18 @@ async function checkPasscode(){
     const res=await fetch(GITHUB_RAW_URL+'?t='+Date.now());
     if(!res.ok)throw new Error(`Could not reach data source (HTTP ${res.status})`);
     const encrypted=await res.json();
-    const data=await decryptPayload(encrypted,passcode);
+    let data;
+    try{
+      data=await decryptPayload(encrypted,passcode);
+    }catch(decryptErr){
+      throw new Error('Incorrect passcode.');
+    }
     sessionStorage.setItem('veyron_key',passcode);
     document.getElementById('gate').style.display='none';
     document.getElementById('app').style.display='block';
     ingestData(data);
   }catch(e){
-    err.textContent=e.message.includes('HTTP')?e.message:'Incorrect passcode.';
+    err.textContent=e.message==='Incorrect passcode.'?e.message:`Could not reach data source: ${e.message}`;
     inp.classList.add('err');setTimeout(()=>inp.classList.remove('err'),400);
     inp.value='';inp.focus();
   }finally{btn.classList.remove('loading');btn.disabled=false;}
@@ -315,13 +330,23 @@ function buildCampaignSection(campName,data){
     <div class="tbl-outer"><table>
       <thead><tr>
         <th>Platform</th><th>Status</th><th>Start</th><th>End</th><th>Objective</th>
-        <th class="r">Cost / X (NTC)</th><th class="r">Current Inv.</th>
-        <th class="r">Req. Inv. (NTM)</th><th class="r">Expected Inv.</th>
-        <th class="r">Days Left</th><th class="r">Budget (NTC)</th>
-        <th class="r">Spent (NTC)</th><th>Remaining</th><th></th>
+        ${thMetric('Cost / X (NTC)','costNTC')}
+        ${thMetric('Current Inv.','currInv')}
+        ${thMetric('Req. Inv. (NTM)','reqInvNTM')}
+        ${thMetric('Expected Inv.','expInv')}
+        ${thMetric('Days Left','days')}
+        ${thMetric('Budget (NTC)','budgetNTC')}
+        ${thMetric('Spent (NTC)','spentNTC')}
+        ${thMetric('Remaining','remaining','')}
+        <th></th>
       </tr></thead>
       <tbody>${tbody}</tbody>
     </table></div>`;
+}
+
+function thMetric(label, key, align='r'){
+  const active = selectedMetric === key;
+  return `<th class="${align} th-clickable ${active?'th-active':''}" onclick="selectMetric('${key}')">${label}</th>`;
 }
 
 // ── Client / campaign selection ──
@@ -335,7 +360,7 @@ function populateClients(){
 function onClient(){
   const client=document.getElementById('client-sel').value;
   selectedCampaigns=new Set();
-  selectedPlatforms=new Set();
+
   const btn=document.getElementById('camp-msel-btn');
   btn.disabled=!client;
   btn.textContent='Select campaigns';
@@ -383,19 +408,19 @@ function toggleCampaign(checkbox){
   if(checkbox.checked) selectedCampaigns.add(checkbox.value);
   else selectedCampaigns.delete(checkbox.value);
   updateCampBtnLabel();
-  selectedPlatforms=new Set(); // reset platform filter scope on campaign change
+
   renderAll();
 }
 function selectAllCamps(){
   const panel=document.getElementById('camp-msel-panel');
   panel.querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=true;selectedCampaigns.add(cb.value);});
-  updateCampBtnLabel();selectedPlatforms=new Set();renderAll();
+  updateCampBtnLabel();renderAll();
 }
 function clearAllCamps(){
   const panel=document.getElementById('camp-msel-panel');
   panel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
   selectedCampaigns=new Set();
-  updateCampBtnLabel();selectedPlatforms=new Set();renderAll();
+  updateCampBtnLabel();renderAll();
 }
 function updateCampBtnLabel(){
   const btn=document.getElementById('camp-msel-btn');
@@ -424,37 +449,32 @@ function getScopeRows(){
   const client=document.getElementById('client-sel').value;
   return rows.filter(r=>r.client===client&&selectedCampaigns.has(r.campaign));
 }
-function renderChartSection(){
-  const scope=getScopeRows();
-  const platforms=[...new Set(scope.map(r=>r.platform))];
-  if(selectedPlatforms.size===0) selectedPlatforms=new Set(platforms); // default: all active
-
-  const filterEl=document.getElementById('plat-filter');
-  filterEl.innerHTML=platforms.map(p=>{
-    const ps=platStyle(p);
-    const active=selectedPlatforms.has(p);
-    const style=active?`background:${ps.bg};color:${ps.color}`:'';
-    return `<div class="plat-pill ${active?'active':''}" style="${style}" onclick="togglePlatformPill(this,'${p.replace(/'/g,"\\'")}')">${p}</div>`;
-  }).join('');
-
-  document.getElementById('chart-section').style.display='block';
-  updateChart();
+function selectMetric(key){
+  selectedMetric=key;
+  renderAll();
 }
-function togglePlatformPill(el,platform){
-  if(selectedPlatforms.has(platform)) selectedPlatforms.delete(platform);
-  else selectedPlatforms.add(platform);
-  renderChartSection();
+function renderChartSection(){
+  document.getElementById('chart-section').style.display='block';
+  const cfg=METRICS[selectedMetric];
+  document.getElementById('chart-title').textContent=`${cfg.label} by Platform`;
+  document.getElementById('chart-sub').textContent=cfg.money?'Converted to selected display currency':'Summed across selected campaigns';
+  updateChart();
 }
 function hideChart(){
   document.getElementById('chart-section').style.display='none';
   if(chartInstance){chartInstance.destroy();chartInstance=null;}
 }
+function fmtChartVal(v,money){
+  return money ? sym()+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : v.toLocaleString('en-US',{maximumFractionDigits:1});
+}
 function updateChart(){
-  const scope=getScopeRows().filter(r=>selectedPlatforms.has(r.platform));
+  const cfg=METRICS[selectedMetric];
+  const scope=getScopeRows();
   const totals={};
   scope.forEach(r=>{
-    if(!isNum(r.spentNTC))return;
-    const val=conv(r.spentNTC,r.currency);
+    const raw=r[selectedMetric];
+    if(!isNum(raw))return;
+    const val=cfg.money?conv(raw,r.currency):Number(raw);
     totals[r.platform]=(totals[r.platform]||0)+val;
   });
   const labels=Object.keys(totals);
@@ -466,14 +486,14 @@ function updateChart(){
   if(chartInstance) chartInstance.destroy();
 
   if(labels.length===0){
-    document.getElementById('chart-legend').innerHTML='<div class="dim" style="font-size:12px">No spend data for this selection.</div>';
+    document.getElementById('chart-legend').innerHTML='<div class="dim" style="font-size:12px">No data for this metric in the current selection.</div>';
     return;
   }
 
   chartInstance=new Chart(ctx,{
     type:'doughnut',
     data:{labels,datasets:[{data:values,backgroundColor:colors,borderColor:getComputedStyle(document.documentElement).getPropertyValue('--bg'),borderWidth:2}]},
-    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${sym()}${c.parsed.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`}}},cutout:'62%'}
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtChartVal(c.parsed,cfg.money)}`}}},cutout:'62%'}
   });
 
   const legend=document.getElementById('chart-legend');
@@ -482,13 +502,13 @@ function updateChart(){
     return `<div class="legend-item">
       <span class="legend-dot" style="background:${colors[i]}"></span>
       <span class="legend-label">${l}</span>
-      <span class="legend-val">${sym()}${values[i].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} · ${pct}%</span>
+      <span class="legend-val">${fmtChartVal(values[i],cfg.money)} · ${pct}%</span>
     </div>`;
   }).join('') + `
     <div class="legend-item legend-total">
       <span class="legend-dot" style="background:var(--accent)"></span>
       <span class="legend-label">Total</span>
-      <span class="legend-val">${sym()}${total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+      <span class="legend-val">${fmtChartVal(total,cfg.money)}</span>
     </div>`;
 }
 
@@ -496,7 +516,7 @@ function updateChart(){
 function ingestData(data){
   rows=data.rows||[];
   selectedCampaigns=new Set();
-  selectedPlatforms=new Set();
+  selectedMetric='spentNTC';
   populateClients();
   if(data.updated_at) setLastUpdated(data.updated_at);
   document.getElementById('client-sel').value='';
