@@ -219,7 +219,7 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/haitham-sudo/campaign-tracker/main/data.json';
+const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/data.json';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SAR_RATE = 3.76;
@@ -482,29 +482,32 @@ function updateChart(){
   const colors=labels.map(l=>platStyle(l).bg);
   const total=values.reduce((a,b)=>a+b,0);
 
-  const ctx=document.getElementById('spend-chart').getContext('2d');
-  if(chartInstance) chartInstance.destroy();
+  // Destroy existing chart and replace canvas — avoids Chart.js canvas reuse / zero-dimension bug
+  if(chartInstance){chartInstance.destroy();chartInstance=null;}
+  document.querySelector('.chart-canvas-wrap').innerHTML='<canvas id="spend-chart" width="220" height="220"></canvas>';
 
-  if(labels.length===0){
-    document.getElementById('chart-legend').innerHTML='<div class="dim" style="font-size:12px">No data for this metric in the current selection.</div>';
+  const legend=document.getElementById('chart-legend');
+
+  if(labels.length===0||total===0){
+    legend.innerHTML='<div class="dim" style="font-size:12px">No data for this metric in the current selection.</div>';
     return;
   }
 
+  const ctx=document.getElementById('spend-chart').getContext('2d');
   chartInstance=new Chart(ctx,{
     type:'doughnut',
-    data:{labels,datasets:[{data:values,backgroundColor:colors,borderColor:getComputedStyle(document.documentElement).getPropertyValue('--bg'),borderWidth:2}]},
-    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtChartVal(c.parsed,cfg.money)}`}}},cutout:'62%'}
+    data:{labels,datasets:[{data:values,backgroundColor:colors,borderColor:getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#ffffff',borderWidth:2}]},
+    options:{responsive:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtChartVal(c.parsed,cfg.money)}`}}},cutout:'62%'}
   });
 
-  const legend=document.getElementById('chart-legend');
-  legend.innerHTML = labels.map((l,i)=>{
+  legend.innerHTML=labels.map((l,i)=>{
     const pct=total>0?((values[i]/total)*100).toFixed(1):'0.0';
-    return `<div class="legend-item">
+    return`<div class="legend-item">
       <span class="legend-dot" style="background:${colors[i]}"></span>
       <span class="legend-label">${l}</span>
       <span class="legend-val">${fmtChartVal(values[i],cfg.money)} · ${pct}%</span>
     </div>`;
-  }).join('') + `
+  }).join('')+`
     <div class="legend-item legend-total">
       <span class="legend-dot" style="background:var(--accent)"></span>
       <span class="legend-label">Total</span>
