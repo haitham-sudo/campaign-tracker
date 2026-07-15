@@ -85,10 +85,14 @@ select:disabled{opacity:.4;cursor:not-allowed}
 @keyframes spin{to{transform:rotate(360deg)}}
 .prompt{padding:64px 28px;text-align:center;color:var(--text-3);font-size:13px}
 
-.camp-hdr{display:flex;align-items:center;gap:12px;padding:13px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg);transition:background .2s}
+.camp-hdr{display:flex;align-items:center;gap:12px;padding:13px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg);transition:background .2s;cursor:pointer;user-select:none}
+.camp-hdr:hover{background:var(--accent-dim)}
 .camp-title{font-size:15px;font-weight:600}
 .date-rng{font-size:12px;color:var(--text-2)}
-.count{font-size:11px;color:var(--text-3);margin-left:auto}
+.count{font-size:11px;color:var(--text-3)}
+.chart-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:auto;flex-shrink:0}
+.badge-in{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent)}
+.badge-out{background:var(--surface-2);color:var(--text-3);border:1px solid var(--border-2)}
 .chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
 .chip-ongoing{background:rgba(74,222,128,.12);color:#4ADE80}
 .chip-paused{background:rgba(251,146,60,.12);color:#FB923C}
@@ -133,7 +137,10 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
 /* Chart section */
 #chart-section{display:none;padding:24px 28px 48px;border-top:1px solid var(--border)}
 .chart-title{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px}
-.chart-sub{font-size:11px;color:var(--text-3);margin-bottom:16px}
+.chart-sub{font-size:11px;color:var(--text-3);margin-bottom:12px}
+.camp-chart-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.camp-chart-pill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-3);transition:all .15s;user-select:none}
+.camp-chart-pill.pill-active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
 .th-clickable{cursor:pointer;user-select:none;transition:background .15s,color .15s}
 .th-clickable:hover{background:var(--accent-dim);color:var(--accent)}
 .th-active{background:var(--accent-dim);color:var(--accent)}
@@ -208,8 +215,9 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
   </div>
 
   <div id="chart-section">
-    <div class="chart-title" id="chart-title">Spend by Platform</div>
-    <div class="chart-sub" id="chart-sub">Click a column header in the table to chart that metric</div>
+    <div class="chart-title" id="chart-title">Spend by Platform & Objective</div>
+    <div class="chart-sub" id="chart-sub">Click a column header to change metric · Click a campaign header to toggle chart inclusion</div>
+    <div class="camp-chart-pills" id="camp-chart-pills"></div>
     <div class="chart-body">
       <div class="chart-canvas-wrap"><canvas id="spend-chart"></canvas></div>
       <div class="chart-legend" id="chart-legend"></div>
@@ -219,15 +227,17 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/haitham-sudo/campaign-tracker/main/data.json';
+const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/data.json';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SAR_RATE = 3.76;
 const state = { cur: 'USD' };
 let rows = [];
 let selectedCampaigns = new Set();
+let chartCampaigns = new Set();
 let selectedMetric = 'spentNTC';
 let chartInstance = null;
+const campNameMap = {};
 
 const METRICS = {
   costNTC:    { label: 'Cost / X (NTC)',     money: true  },
@@ -299,6 +309,9 @@ function buildCampaignSection(campName,data){
   const starts=data.map(r=>r.start).filter(Boolean),ends=data.map(r=>r.end).filter(Boolean);
   const s1=starts.length?fmtDate(starts.reduce((a,b)=>a<b?a:b)):null,e1=ends.length?fmtDate(ends.reduce((a,b)=>a>b?a:b)):null;
   const dateRange=(s1&&e1)?`${s1} – ${e1}`:(s1||'');
+  const inChart=chartCampaigns.has(campName);
+  const hdrId='chdr_'+Object.keys(campNameMap).length;
+  campNameMap[hdrId]=campName;
   const tbody=data.map(r=>{
     const ps=platStyle(r.platform),bs=ps.border?`border:${ps.border}`:'';
     const lnk=r.dashboard?`<a class="dash-lnk" href="${r.dashboard.replace(/"/g,'&quot;')}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗</a>`:`<span class="dash-lnk" style="opacity:.2;pointer-events:none">↗</span>`;
@@ -320,12 +333,13 @@ function buildCampaignSection(campName,data){
     </tr>`;
   }).join('');
   return `
-    <div class="camp-hdr">
+    <div class="camp-hdr" onclick="toggleChartCampaignById('${hdrId}')">
       <span class="camp-title">${campName||'(unnamed)'}</span>
       ${dateRange?`<span class="date-rng">${dateRange}</span>`:''}
       <span style="color:var(--border-2)">·</span>
       <span style="display:flex;align-items:center;gap:4px">${chips}</span>
-      <span class="count">${data.length} platform${data.length!==1?'s':''}</span>
+      <span style="font-size:11px;color:var(--text-3)">${data.length} platform${data.length!==1?'s':''}</span>
+      <span class="chart-badge ${inChart?'badge-in':'badge-out'}">${inChart?'In chart':'Excluded'}</span>
     </div>
     <div class="tbl-outer"><table>
       <thead><tr>
@@ -360,6 +374,7 @@ function populateClients(){
 function onClient(){
   const client=document.getElementById('client-sel').value;
   selectedCampaigns=new Set();
+  chartCampaigns=new Set();
 
   const btn=document.getElementById('camp-msel-btn');
   btn.disabled=!client;
@@ -435,6 +450,11 @@ function renderAll(){
     hideChart();
     return;
   }
+  // Sync chartCampaigns: add new selections, remove deselected
+  selectedCampaigns.forEach(c=>{if(!chartCampaigns.has(c))chartCampaigns.add(c);});
+  [...chartCampaigns].forEach(c=>{if(!selectedCampaigns.has(c))chartCampaigns.delete(c);});
+  // Clear campNameMap before rebuild to avoid stale IDs
+  Object.keys(campNameMap).forEach(k=>delete campNameMap[k]);
   const client=document.getElementById('client-sel').value;
   const sections=[...selectedCampaigns].map(camp=>{
     const data=rows.filter(r=>r.client===client&&r.campaign===camp);
@@ -445,6 +465,17 @@ function renderAll(){
 }
 
 // ── Chart ──
+function getChartRows(){
+  const client=document.getElementById('client-sel').value;
+  return rows.filter(r=>r.client===client&&chartCampaigns.has(r.campaign));
+}
+function toggleChartCampaignById(id){
+  const camp=campNameMap[id];
+  if(!camp)return;
+  if(chartCampaigns.has(camp))chartCampaigns.delete(camp);
+  else chartCampaigns.add(camp);
+  renderAll();
+}
 function getScopeRows(){
   const client=document.getElementById('client-sel').value;
   return rows.filter(r=>r.client===client&&selectedCampaigns.has(r.campaign));
@@ -454,10 +485,23 @@ function selectMetric(key){
   renderAll();
 }
 function renderChartSection(){
+  // Add newly selected campaigns into chart by default; remove deselected ones
+  selectedCampaigns.forEach(c=>{if(!chartCampaigns.has(c))chartCampaigns.add(c);});
+  [...chartCampaigns].forEach(c=>{if(!selectedCampaigns.has(c))chartCampaigns.delete(c);});
+
   document.getElementById('chart-section').style.display='block';
   const cfg=METRICS[selectedMetric];
-  document.getElementById('chart-title').textContent=`${cfg.label} by Platform`;
-  document.getElementById('chart-sub').textContent=cfg.money?'Converted to selected display currency':'Summed across selected campaigns';
+  document.getElementById('chart-title').textContent=`${cfg.label} by Platform & Objective`;
+  document.getElementById('chart-sub').textContent=cfg.money?'Converted to selected display currency · Click campaign headers or pills to filter':'Summed across selected campaigns · Click campaign headers or pills to filter';
+
+  // Build campaign filter pills
+  const pillsEl=document.getElementById('camp-chart-pills');
+  [...selectedCampaigns].forEach((c,i)=>{campNameMap['cpill_'+i]=c;});
+  pillsEl.innerHTML=[...selectedCampaigns].map((c,i)=>{
+    const active=chartCampaigns.has(c);
+    return`<div class="camp-chart-pill${active?' pill-active':''}" onclick="toggleChartCampaignById('cpill_${i}')">${c}</div>`;
+  }).join('');
+
   updateChart();
 }
 function hideChart(){
@@ -469,17 +513,18 @@ function fmtChartVal(v,money){
 }
 function updateChart(){
   const cfg=METRICS[selectedMetric];
-  const scope=getScopeRows();
+  const scope=getChartRows();
   const totals={};
   scope.forEach(r=>{
     const raw=r[selectedMetric];
     if(!isNum(raw))return;
     const val=cfg.money?conv(raw,r.currency):Number(raw);
-    totals[r.platform]=(totals[r.platform]||0)+val;
+    const key=r.objective?`${r.platform} · ${r.objective}`:r.platform;
+    totals[key]=(totals[key]||0)+val;
   });
   const labels=Object.keys(totals);
   const values=labels.map(l=>totals[l]);
-  const colors=labels.map(l=>platStyle(l).bg);
+  const colors=labels.map(l=>platStyle(l.split(' · ')[0]).bg);
   const total=values.reduce((a,b)=>a+b,0);
 
   // Destroy existing chart and replace canvas — avoids Chart.js canvas reuse / zero-dimension bug
@@ -519,6 +564,7 @@ function updateChart(){
 function ingestData(data){
   rows=data.rows||[];
   selectedCampaigns=new Set();
+  chartCampaigns=new Set();
   selectedMetric='spentNTC';
   populateClients();
   if(data.updated_at) setLastUpdated(data.updated_at);
