@@ -528,7 +528,7 @@ function updateChart(){
     const raw=r[selectedMetric];
     if(!isNum(raw))return;
     const val=cfg.money?conv(raw,r.currency):Number(raw);
-    const key=r.objective?`${r.platform} · ${r.objective}`:r.platform;
+    const key=`${r.campaign} · ${r.platform}${r.objective?' · '+r.objective:''}`;
     totals[key]=(totals[key]||0)+val;
   });
   const labels=Object.keys(totals);
