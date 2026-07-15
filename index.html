@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+<script>
+// ── CONFIG — the only lines you ever need to edit ─────────────────────────────
+const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/haitham-sudo/campaign-tracker/main/data.json';
+// ─────────────────────────────────────────────────────────────────────────────
+</script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -226,10 +231,6 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
 </div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/haitham-sudo/campaign-tracker/main/data.json';
-// ─────────────────────────────────────────────────────────────────────────────
-
 const SAR_RATE = 3.76;
 const state = { cur: 'USD' };
 let rows = [];
@@ -237,7 +238,6 @@ let selectedCampaigns = new Set();
 let chartCampaigns = new Set();
 let selectedMetric = 'spentNTC';
 let chartInstance = null;
-const campNameMap = {};
 
 const METRICS = {
   costNTC:    { label: 'Cost / X (NTC)',     money: true  },
@@ -302,7 +302,7 @@ function budgetCell(spent,total,remaining,fc){const r=fmtMoney(remaining,fc);if(
 function setLastUpdated(iso){const d=new Date(iso+'Z');const f=d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'});document.getElementById('lu-text').textContent=`Last Updated: ${f}`;document.getElementById('last-updated').classList.add('has-data');}
 
 // ── Campaign section (table) builder ──
-function buildCampaignSection(campName,data){
+function buildCampaignSection(campName,data,idx){
   if(!data.length)return `<div class="prompt">No rows found for ${campName}.</div>`;
   const sc={};data.forEach(r=>{sc[r.status]=(sc[r.status]||0)+1;});
   const chips=Object.entries(sc).map(([s,n])=>`${fmtStatus(s)}<span style="font-size:10px;color:var(--text-3);margin-left:3px">${n}</span>`).join('<span style="color:var(--border-2);margin:0 5px">·</span>');
@@ -310,8 +310,6 @@ function buildCampaignSection(campName,data){
   const s1=starts.length?fmtDate(starts.reduce((a,b)=>a<b?a:b)):null,e1=ends.length?fmtDate(ends.reduce((a,b)=>a>b?a:b)):null;
   const dateRange=(s1&&e1)?`${s1} – ${e1}`:(s1||'');
   const inChart=chartCampaigns.has(campName);
-  const hdrId='chdr_'+Object.keys(campNameMap).length;
-  campNameMap[hdrId]=campName;
   const tbody=data.map(r=>{
     const ps=platStyle(r.platform),bs=ps.border?`border:${ps.border}`:'';
     const lnk=r.dashboard?`<a class="dash-lnk" href="${r.dashboard.replace(/"/g,'&quot;')}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗</a>`:`<span class="dash-lnk" style="opacity:.2;pointer-events:none">↗</span>`;
@@ -333,7 +331,7 @@ function buildCampaignSection(campName,data){
     </tr>`;
   }).join('');
   return `
-    <div class="camp-hdr" onclick="toggleChartCampaignById('${hdrId}')">
+    <div class="camp-hdr" data-idx="${idx}" onclick="toggleChartHdr(this)">
       <span class="camp-title">${campName||'(unnamed)'}</span>
       ${dateRange?`<span class="date-rng">${dateRange}</span>`:''}
       <span style="color:var(--border-2)">·</span>
@@ -453,12 +451,10 @@ function renderAll(){
   // Sync chartCampaigns: add new selections, remove deselected
   selectedCampaigns.forEach(c=>{if(!chartCampaigns.has(c))chartCampaigns.add(c);});
   [...chartCampaigns].forEach(c=>{if(!selectedCampaigns.has(c))chartCampaigns.delete(c);});
-  // Clear campNameMap before rebuild to avoid stale IDs
-  Object.keys(campNameMap).forEach(k=>delete campNameMap[k]);
   const client=document.getElementById('client-sel').value;
-  const sections=[...selectedCampaigns].map(camp=>{
+  const sections=[...selectedCampaigns].map((camp,idx)=>{
     const data=rows.filter(r=>r.client===client&&r.campaign===camp);
-    return buildCampaignSection(camp,data);
+    return buildCampaignSection(camp,data,idx);
   }).join('<div style="height:8px"></div>');
   document.getElementById('main').innerHTML=sections;
   renderChartSection();
@@ -469,8 +465,17 @@ function getChartRows(){
   const client=document.getElementById('client-sel').value;
   return rows.filter(r=>r.client===client&&chartCampaigns.has(r.campaign));
 }
-function toggleChartCampaignById(id){
-  const camp=campNameMap[id];
+function toggleChartHdr(el){
+  const i=parseInt(el.dataset.idx);
+  const camp=[...selectedCampaigns][i];
+  if(!camp)return;
+  if(chartCampaigns.has(camp))chartCampaigns.delete(camp);
+  else chartCampaigns.add(camp);
+  renderAll();
+}
+function toggleChartPill(el){
+  const i=parseInt(el.dataset.idx);
+  const camp=[...selectedCampaigns][i];
   if(!camp)return;
   if(chartCampaigns.has(camp))chartCampaigns.delete(camp);
   else chartCampaigns.add(camp);
@@ -494,12 +499,11 @@ function renderChartSection(){
   document.getElementById('chart-title').textContent=`${cfg.label} by Platform & Objective`;
   document.getElementById('chart-sub').textContent=cfg.money?'Converted to selected display currency · Click campaign headers or pills to filter':'Summed across selected campaigns · Click campaign headers or pills to filter';
 
-  // Build campaign filter pills
+  // Build campaign group filter pills
   const pillsEl=document.getElementById('camp-chart-pills');
-  [...selectedCampaigns].forEach((c,i)=>{campNameMap['cpill_'+i]=c;});
   pillsEl.innerHTML=[...selectedCampaigns].map((c,i)=>{
     const active=chartCampaigns.has(c);
-    return`<div class="camp-chart-pill${active?' pill-active':''}" onclick="toggleChartCampaignById('cpill_${i}')">${c}</div>`;
+    return`<div class="camp-chart-pill${active?' pill-active':''}" data-idx="${i}" onclick="toggleChartPill(this)">${c}</div>`;
   }).join('');
 
   updateChart();
