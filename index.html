@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <script>
 // ── CONFIG — the only lines you ever need to edit ─────────────────────────────
-const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/haitham-sudo/campaign-tracker/main/data.json';
+const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/data.json';
 // ─────────────────────────────────────────────────────────────────────────────
 </script>
 <head>
@@ -17,7 +17,7 @@ const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/haitham-sudo/campaign-
 [data-theme="light"]{--bg:#FAFAFA;--surface:#F0F0F3;--surface-2:#E8E8ED;--border:#DCDCE6;--border-2:#C8C8D8;--accent:#D1206B;--accent-dim:rgba(209,32,107,0.07);--text-1:#111120;--text-2:#50506A;--text-3:#909098;--green:#16A34A;--orange:#D97706;--red:#DC2626;--tog-off:#C8C8D8;--shad:0 1px 3px rgba(0,0,0,0.08)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text-1);font-family:var(--ui);font-size:14px;min-height:100vh;transition:background .2s,color .2s}
- 
+
 /* Gate */
 #gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;transition:background .2s}
 .gate-box{width:100%;max-width:340px;padding:40px 36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);text-align:center}
@@ -35,7 +35,7 @@ body{background:var(--bg);color:var(--text-1);font-family:var(--ui);font-size:14
 .gate-spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none}
 .gate-btn.loading .gate-spinner{display:block}
 .gate-btn.loading .gate-btn-text{opacity:.7}
- 
+
 /* App */
 #app{display:none}
 .header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);gap:16px;background:var(--bg);box-shadow:var(--shad);transition:background .2s,box-shadow .2s}
@@ -57,7 +57,7 @@ body{background:var(--bg);color:var(--text-1);font-family:var(--ui);font-size:14
 .tog-knob{position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .tog.on .tog-knob{transform:translateX(18px)}
 .vdiv{width:1px;height:20px;background:var(--border)}
- 
+
 /* Controls */
 .controls{display:flex;align-items:flex-start;gap:10px;padding:14px 28px;border-bottom:1px solid var(--border);background:var(--bg);transition:background .2s;flex-wrap:wrap}
 .sel-wrap{position:relative}
@@ -67,7 +67,7 @@ select:hover,select:focus{border-color:var(--accent)}
 select:disabled{opacity:.4;cursor:not-allowed}
 .sel-wrap::after{content:'▾';position:absolute;right:11px;bottom:10px;color:var(--text-3);pointer-events:none;font-size:11px}
 .sep{color:var(--border-2);font-size:20px;margin-top:28px}
- 
+
 /* Multi-select dropdown */
 .msel-wrap{position:relative}
 .msel-wrap>span{display:block;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
@@ -82,14 +82,14 @@ select:disabled{opacity:.4;cursor:not-allowed}
 .msel-item input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;flex-shrink:0}
 .msel-actions{display:flex;gap:12px;padding:7px 8px 3px;border-top:1px solid var(--border);margin-top:4px}
 .msel-action-btn{font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:var(--ui);font-weight:600;padding:0}
- 
+
 .state-box{padding:64px 28px;text-align:center}
 .state-box h2{font-size:15px;font-weight:600;margin-bottom:8px}
 .state-box p{color:var(--text-2);font-size:13px;line-height:1.65;max-width:380px;margin:0 auto}
 .spinner{width:28px;height:28px;border:2px solid var(--border-2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 18px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .prompt{padding:64px 28px;text-align:center;color:var(--text-3);font-size:13px}
- 
+
 .camp-hdr{display:flex;align-items:center;gap:12px;padding:13px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg);transition:background .2s;cursor:pointer;user-select:none}
 .camp-hdr:hover{background:var(--accent-dim)}
 .camp-title{font-size:15px;font-weight:600}
@@ -98,6 +98,7 @@ select:disabled{opacity:.4;cursor:not-allowed}
 .chart-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:auto;flex-shrink:0}
 .badge-in{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent)}
 .badge-out{background:var(--surface-2);color:var(--text-3);border:1px solid var(--border-2)}
+.badge-partial{background:rgba(251,146,60,.1);color:#FB923C;border:1px solid #FB923C}
 .chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
 .chip-ongoing{background:rgba(74,222,128,.12);color:#4ADE80}
 .chip-paused{background:rgba(251,146,60,.12);color:#FB923C}
@@ -108,7 +109,7 @@ select:disabled{opacity:.4;cursor:not-allowed}
 [data-theme="light"] .chip-paused{background:rgba(217,119,6,.1);color:#D97706}
 [data-theme="light"] .chip-pending{background:rgba(80,80,106,.1);color:#50506A}
 [data-theme="light"] .chip-done{background:rgba(220,38,38,.1);color:#DC2626}
- 
+
 .tbl-outer{overflow-x:auto;padding:0 28px 28px}
 table{width:100%;border-collapse:collapse;min-width:1280px}
 thead th{background:var(--surface-2);color:var(--text-3);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);transition:background .2s}
@@ -138,7 +139,7 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
 .budg-pct{font-size:10px;color:var(--text-3);margin-top:3px;display:block}
 .dash-lnk{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:var(--r-sm);border:1px solid var(--border-2);color:var(--text-3);font-size:11px;text-decoration:none;transition:all .15s}
 .dash-lnk:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
- 
+
 /* Chart section */
 #chart-section{display:none;padding:24px 28px 48px;border-top:1px solid var(--border)}
 .chart-title{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px}
@@ -146,6 +147,7 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
 .camp-chart-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
 .camp-chart-pill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-3);transition:all .15s;user-select:none}
 .camp-chart-pill.pill-active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.camp-chart-pill.pill-partial{border-color:#FB923C;background:rgba(251,146,60,.1);color:#FB923C}
 .th-clickable{cursor:pointer;user-select:none;transition:background .15s,color .15s}
 .th-clickable:hover{background:var(--accent-dim);color:var(--accent)}
 .th-active{background:var(--accent-dim);color:var(--accent)}
@@ -160,7 +162,7 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
 </style>
 </head>
 <body>
- 
+
 <!-- Gate -->
 <div id="gate">
   <div class="gate-box">
@@ -176,7 +178,7 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
     </button>
   </div>
 </div>
- 
+
 <!-- App -->
 <div id="app">
   <div class="header">
@@ -201,7 +203,7 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
       </div>
     </div>
   </div>
- 
+
   <div class="controls">
     <div class="sel-wrap">
       <span>Client</span>
@@ -214,11 +216,11 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
       <div class="msel-panel" id="camp-msel-panel"></div>
     </div>
   </div>
- 
+
   <div id="main">
     <div class="state-box"><div class="spinner"></div><h2>Loading data</h2></div>
   </div>
- 
+
   <div id="chart-section">
     <div class="chart-title" id="chart-title">Spend by Platform & Objective</div>
     <div class="chart-sub" id="chart-sub">Click a column header to change metric · Click a campaign header to toggle chart inclusion</div>
@@ -229,16 +231,29 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
     </div>
   </div>
 </div>
- 
+
 <script>
 const SAR_RATE = 3.76;
 const state = { cur: 'USD' };
 let rows = [];
 let selectedCampaigns = new Set();
-let chartCampaigns = new Set();
+let selectedRows = new Set(); // row-level chart filter: "campaign|||platform|||objective"
 let selectedMetric = 'spentNTC';
 let chartInstance = null;
- 
+
+function rowKey(r){ return `${r.campaign}|||${r.platform}|||${r.objective||''}`; }
+
+function campRowState(campName){
+  // Returns 'in' | 'partial' | 'out' based on how many rows are in selectedRows
+  const client=document.getElementById('client-sel').value;
+  const cr=rows.filter(r=>r.client===client&&r.campaign===campName);
+  if(!cr.length)return 'out';
+  const sel=cr.filter(r=>selectedRows.has(rowKey(r))).length;
+  if(sel===0)return 'out';
+  if(sel===cr.length)return 'in';
+  return 'partial';
+}
+
 const METRICS = {
   costNTC:    { label: 'Cost / X (NTC)',     money: true  },
   currInv:    { label: 'Current Inventory',  money: false },
@@ -249,12 +264,12 @@ const METRICS = {
   spentNTC:   { label: 'Spent (NTC)',        money: true  },
   remaining:  { label: 'Budget Remaining',   money: true  },
 };
- 
+
 // ── Crypto helpers ──
 function b64ToBytes(b64){const bin=atob(b64);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return bytes;}
 async function deriveKey(passcode,salt){const keyMaterial=await crypto.subtle.importKey('raw',new TextEncoder().encode(passcode),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},keyMaterial,{name:'AES-GCM',length:256},false,['decrypt']);}
 async function decryptPayload(encrypted,passcode){const salt=b64ToBytes(encrypted.salt),iv=b64ToBytes(encrypted.iv),ciphertext=b64ToBytes(encrypted.data);const key=await deriveKey(passcode,salt);const decrypted=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ciphertext);return JSON.parse(new TextDecoder().decode(decrypted));}
- 
+
 // ── Gate ──
 async function checkPasscode(){
   const passcode=document.getElementById('pc-input').value;
@@ -285,7 +300,7 @@ async function checkPasscode(){
   const key=sessionStorage.getItem('veyron_key');
   if(key){document.getElementById('gate').style.display='none';document.getElementById('app').style.display='block';loadFromGitHub();}
 })();
- 
+
 // ── Platform styles ──
 const PLAT={'meta':{bg:'#1877F2',color:'#fff'},'instagram':{bg:'#C13584',color:'#fff'},'tiktok':{bg:'#161823',color:'#69C9D0',border:'1px solid #2a2a2a'},'x (twitter)':{bg:'#111',color:'#E7E7E7',border:'1px solid #333'},'linkedin':{bg:'#0077B5',color:'#fff'},'snapchat':{bg:'#FFFC00',color:'#111'},'youtube':{bg:'#FF0000',color:'#fff'},'uac':{bg:'#4285F4',color:'#fff'},'demandgen':{bg:'#34A853',color:'#fff'},'sem':{bg:'#FBBC04',color:'#111'}};
 function platStyle(p){const k=p.toLowerCase();for(const[key,val]of Object.entries(PLAT))if(k.includes(key))return val;return{bg:'#2D3250',color:'#C4C9E0'};}
@@ -300,7 +315,7 @@ function fmtDays(v){if(!isNum(v))return '<span class="dim">—</span>';const n=M
 function fmtStatus(s){const k=(s||'').toLowerCase();const cls=k.includes('on going')||k==='ongoing'?'chip-ongoing':k==='paused'?'chip-paused':k==='pending'?'chip-pending':k==='done'?'chip-done':'chip-default';return`<span class="chip ${cls}">${s||'—'}</span>`;}
 function budgetCell(spent,total,remaining,fc){const r=fmtMoney(remaining,fc);if(!isNum(spent)||!isNum(total)||Number(total)<=0)return`<div class="budg"><span class="budg-val">${r}</span></div>`;const pct=Math.min(100,Math.max(0,(Number(spent)/Number(total))*100));const fc2=pct>90?'#F87171':pct>75?'#FB923C':'#4ADE80';return`<div class="budg"><span class="budg-val">${r}</span><div class="budg-track"><div class="budg-fill" style="width:${pct.toFixed(1)}%;background:${fc2}"></div></div><span class="budg-pct">${pct.toFixed(0)}% spent</span></div>`;}
 function setLastUpdated(iso){const d=new Date(iso+'Z');const f=d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'});document.getElementById('lu-text').textContent=`Last Updated: ${f}`;document.getElementById('last-updated').classList.add('has-data');}
- 
+
 // ── Campaign section (table) builder ──
 function buildCampaignSection(campName,data,idx){
   if(!data.length)return `<div class="prompt">No rows found for ${campName}.</div>`;
@@ -309,11 +324,16 @@ function buildCampaignSection(campName,data,idx){
   const starts=data.map(r=>r.start).filter(Boolean),ends=data.map(r=>r.end).filter(Boolean);
   const s1=starts.length?fmtDate(starts.reduce((a,b)=>a<b?a:b)):null,e1=ends.length?fmtDate(ends.reduce((a,b)=>a>b?a:b)):null;
   const dateRange=(s1&&e1)?`${s1} – ${e1}`:(s1||'');
-  const inChart=chartCampaigns.has(campName);
+  const cs=campRowState(campName);
+  const badgeCls=cs==='in'?'badge-in':cs==='partial'?'badge-partial':'badge-out';
+  const badgeTxt=cs==='in'?'In chart':cs==='partial'?'Partial':'Excluded';
   const tbody=data.map(r=>{
     const ps=platStyle(r.platform),bs=ps.border?`border:${ps.border}`:'';
     const lnk=r.dashboard?`<a class="dash-lnk" href="${r.dashboard.replace(/"/g,'&quot;')}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗</a>`:`<span class="dash-lnk" style="opacity:.2;pointer-events:none">↗</span>`;
+    const key=rowKey(r).replace(/'/g,"\\'");
+    const checked=selectedRows.has(rowKey(r))?'checked':'';
     return`<tr>
+      <td style="padding:8px 12px;text-align:center"><input type="checkbox" ${checked} style="accent-color:var(--accent);width:13px;height:13px;cursor:pointer" onchange="toggleRow(this,'${key}')"></td>
       <td><span class="plat" style="background:${ps.bg};color:${ps.color};${bs}">${r.platform}</span></td>
       <td>${fmtStatus(r.status)}</td>
       <td style="font-size:11px;color:var(--text-2)">${fmtDate(r.start)||'—'}</td>
@@ -337,10 +357,11 @@ function buildCampaignSection(campName,data,idx){
       <span style="color:var(--border-2)">·</span>
       <span style="display:flex;align-items:center;gap:4px">${chips}</span>
       <span style="font-size:11px;color:var(--text-3)">${data.length} platform${data.length!==1?'s':''}</span>
-      <span class="chart-badge ${inChart?'badge-in':'badge-out'}">${inChart?'In chart':'Excluded'}</span>
+      <span class="chart-badge ${badgeCls}">${badgeTxt}</span>
     </div>
     <div class="tbl-outer"><table>
       <thead><tr>
+        <th style="width:36px"></th>
         <th>Platform</th><th>Status</th><th>Start</th><th>End</th><th>Objective</th>
         ${thMetric('Cost / X (NTC)','costNTC')}
         ${thMetric('Current Inv.','currInv')}
@@ -355,12 +376,12 @@ function buildCampaignSection(campName,data,idx){
       <tbody>${tbody}</tbody>
     </table></div>`;
 }
- 
+
 function thMetric(label, key, align='r'){
   const active = selectedMetric === key;
   return `<th class="${align} th-clickable ${active?'th-active':''}" onclick="selectMetric('${key}')">${label}</th>`;
 }
- 
+
 // ── Client / campaign selection ──
 function populateClients(){
   const clients=[...new Set(rows.map(r=>r.client))].sort();
@@ -368,12 +389,12 @@ function populateClients(){
   sel.innerHTML='<option value="">— Select client —</option>';
   clients.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
 }
- 
+
 function onClient(){
   const client=document.getElementById('client-sel').value;
   selectedCampaigns=new Set();
-  chartCampaigns=new Set();
- 
+  selectedRows=new Set();
+
   const btn=document.getElementById('camp-msel-btn');
   btn.disabled=!client;
   btn.textContent='Select campaigns';
@@ -387,7 +408,7 @@ function onClient(){
   document.getElementById('main').innerHTML='<div class="prompt">Select one or more campaigns above.</div>';
   hideChart();
 }
- 
+
 function buildCampPanel(client){
   const camps=[...new Set(rows.filter(r=>r.client===client).map(r=>r.campaign))];
   const panel=document.getElementById('camp-msel-panel');
@@ -401,7 +422,7 @@ function buildCampPanel(client){
       <button class="msel-action-btn" onclick="clearAllCamps()">Clear</button>
     </div>`;
 }
- 
+
 function toggleCampPanel(){
   const panel=document.getElementById('camp-msel-panel');
   const btn=document.getElementById('camp-msel-btn');
@@ -416,23 +437,35 @@ document.addEventListener('click',e=>{
   const wrap=document.getElementById('camp-msel-wrap');
   if(wrap && !wrap.contains(e.target)) closeCampPanel();
 });
- 
+
 function toggleCampaign(checkbox){
-  if(checkbox.checked){ selectedCampaigns.add(checkbox.value); chartCampaigns.add(checkbox.value); }
-  else { selectedCampaigns.delete(checkbox.value); chartCampaigns.delete(checkbox.value); }
+  const client=document.getElementById('client-sel').value;
+  const camp=checkbox.value;
+  if(checkbox.checked){
+    selectedCampaigns.add(camp);
+    rows.filter(r=>r.client===client&&r.campaign===camp).forEach(r=>selectedRows.add(rowKey(r)));
+  } else {
+    selectedCampaigns.delete(camp);
+    rows.filter(r=>r.client===client&&r.campaign===camp).forEach(r=>selectedRows.delete(rowKey(r)));
+  }
   updateCampBtnLabel();
   renderAll();
 }
 function selectAllCamps(){
+  const client=document.getElementById('client-sel').value;
   const panel=document.getElementById('camp-msel-panel');
-  panel.querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=true;selectedCampaigns.add(cb.value);chartCampaigns.add(cb.value);});
+  panel.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.checked=true;
+    selectedCampaigns.add(cb.value);
+    rows.filter(r=>r.client===client&&r.campaign===cb.value).forEach(r=>selectedRows.add(rowKey(r)));
+  });
   updateCampBtnLabel();renderAll();
 }
 function clearAllCamps(){
   const panel=document.getElementById('camp-msel-panel');
   panel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
   selectedCampaigns=new Set();
-  chartCampaigns=new Set();
+  selectedRows=new Set();
   updateCampBtnLabel();renderAll();
 }
 function updateCampBtnLabel(){
@@ -440,7 +473,7 @@ function updateCampBtnLabel(){
   const n=selectedCampaigns.size;
   btn.textContent = n===0?'Select campaigns':n===1?[...selectedCampaigns][0]:`${n} campaigns selected`;
 }
- 
+
 // ── Main render ──
 function renderAll(){
   if(selectedCampaigns.size===0){
@@ -456,26 +489,36 @@ function renderAll(){
   document.getElementById('main').innerHTML=sections;
   renderChartSection();
 }
- 
+
 // ── Chart ──
 function getChartRows(){
   const client=document.getElementById('client-sel').value;
-  return rows.filter(r=>r.client===client&&chartCampaigns.has(r.campaign));
+  return rows.filter(r=>r.client===client&&selectedCampaigns.has(r.campaign)&&selectedRows.has(rowKey(r)));
+}
+function toggleRow(cb,key){
+  if(cb.checked)selectedRows.add(key);
+  else selectedRows.delete(key);
+  // Update badge on camp header without full re-render
+  renderAll();
 }
 function toggleChartHdr(el){
   const i=parseInt(el.dataset.idx);
   const camp=[...selectedCampaigns][i];
   if(!camp)return;
-  if(chartCampaigns.has(camp))chartCampaigns.delete(camp);
-  else chartCampaigns.add(camp);
+  const client=document.getElementById('client-sel').value;
+  const cr=rows.filter(r=>r.client===client&&r.campaign===camp);
+  const anyIn=cr.some(r=>selectedRows.has(rowKey(r)));
+  cr.forEach(r=>{ if(anyIn)selectedRows.delete(rowKey(r)); else selectedRows.add(rowKey(r)); });
   renderAll();
 }
 function toggleChartPill(el){
   const i=parseInt(el.dataset.idx);
   const camp=[...selectedCampaigns][i];
   if(!camp)return;
-  if(chartCampaigns.has(camp))chartCampaigns.delete(camp);
-  else chartCampaigns.add(camp);
+  const client=document.getElementById('client-sel').value;
+  const cr=rows.filter(r=>r.client===client&&r.campaign===camp);
+  const anyIn=cr.some(r=>selectedRows.has(rowKey(r)));
+  cr.forEach(r=>{ if(anyIn)selectedRows.delete(rowKey(r)); else selectedRows.add(rowKey(r)); });
   renderAll();
 }
 function getScopeRows(){
@@ -491,14 +534,15 @@ function renderChartSection(){
   const cfg=METRICS[selectedMetric];
   document.getElementById('chart-title').textContent=`${cfg.label} by Platform & Objective`;
   document.getElementById('chart-sub').textContent=cfg.money?'Converted to selected display currency · Click campaign headers or pills to filter':'Summed across selected campaigns · Click campaign headers or pills to filter';
- 
+
   // Build campaign group filter pills
   const pillsEl=document.getElementById('camp-chart-pills');
   pillsEl.innerHTML=[...selectedCampaigns].map((c,i)=>{
-    const active=chartCampaigns.has(c);
-    return`<div class="camp-chart-pill${active?' pill-active':''}" data-idx="${i}" onclick="toggleChartPill(this)">${c}</div>`;
+    const cs=campRowState(c);
+    const cls=cs==='in'?'pill-active':cs==='partial'?'pill-partial':'';
+    return`<div class="camp-chart-pill ${cls}" data-idx="${i}" onclick="toggleChartPill(this)">${c}</div>`;
   }).join('');
- 
+
   updateChart();
 }
 function hideChart(){
@@ -523,37 +567,36 @@ function fmtChartVal(v,money){
 function updateChart(){
   const cfg=METRICS[selectedMetric];
   const scope=getChartRows();
-  const totals={};
+  const labels=[],values=[],colors=[];
   scope.forEach(r=>{
     const raw=r[selectedMetric];
     if(!isNum(raw))return;
     const val=cfg.money?conv(raw,r.currency):Number(raw);
-    const key=`${r.campaign} · ${r.platform}${r.objective?' · '+r.objective:''}`;
-    totals[key]=(totals[key]||0)+val;
+    const lbl=`${r.campaign} · ${r.platform}${r.objective?' · '+r.objective:''}`;
+    const idx=labels.indexOf(lbl);
+    if(idx===-1){labels.push(lbl);values.push(val);colors.push(platStyle(r.platform).bg);}
+    else values[idx]+=val;
   });
-  const labels=Object.keys(totals);
-  const values=labels.map(l=>totals[l]);
-  const colors=labels.map(l=>platStyle(l.split(' · ')[0]).bg);
   const total=values.reduce((a,b)=>a+b,0);
- 
+
   // Destroy existing chart and replace canvas — avoids Chart.js canvas reuse / zero-dimension bug
   if(chartInstance){chartInstance.destroy();chartInstance=null;}
   document.querySelector('.chart-canvas-wrap').innerHTML='<canvas id="spend-chart" width="220" height="220"></canvas>';
- 
+
   const legend=document.getElementById('chart-legend');
- 
+
   if(labels.length===0||total===0){
     legend.innerHTML='<div class="dim" style="font-size:12px">No data for this metric in the current selection.</div>';
     return;
   }
- 
+
   const ctx=document.getElementById('spend-chart').getContext('2d');
   chartInstance=new Chart(ctx,{
     type:'doughnut',
     data:{labels,datasets:[{data:values,backgroundColor:colors,borderColor:getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#ffffff',borderWidth:2}]},
     options:{responsive:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtChartVal(c.parsed,cfg.money)}`}}},cutout:'62%'}
   });
- 
+
   legend.innerHTML=labels.map((l,i)=>{
     const pct=total>0?((values[i]/total)*100).toFixed(1):'0.0';
     return`<div class="legend-item" style="cursor:pointer" onmouseenter="highlightSlice(${i})" onmouseleave="clearHighlight()">
@@ -568,12 +611,12 @@ function updateChart(){
       <span class="legend-val">${fmtChartVal(total,cfg.money)}</span>
     </div>`;
 }
- 
+
 // ── Data loading ──
 function ingestData(data){
   rows=data.rows||[];
   selectedCampaigns=new Set();
-  chartCampaigns=new Set();
+  selectedRows=new Set();
   selectedMetric='spentNTC';
   populateClients();
   if(data.updated_at) setLastUpdated(data.updated_at);
@@ -598,7 +641,7 @@ async function loadFromGitHub(){
     ingestData(data);
   }catch(e){showError(`Failed to load: ${e.message}`);}
 }
- 
+
 // ── Toggles ──
 function toggleCur(){state.cur=state.cur==='USD'?'SAR':'USD';const u=state.cur==='USD';document.getElementById('tog-cur').classList.toggle('on',u);document.getElementById('lbl-usd').classList.toggle('on',u);document.getElementById('lbl-sar').classList.toggle('on',!u);renderAll();}
 function toggleTheme(){const html=document.documentElement,d=html.dataset.theme==='dark';html.dataset.theme=d?'light':'dark';document.getElementById('tog-theme').classList.toggle('on',!d);document.getElementById('lbl-dark').classList.toggle('on',d);document.getElementById('lbl-light').classList.toggle('on',!d);if(chartInstance)updateChart();}
