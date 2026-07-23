@@ -244,18 +244,26 @@ let chartInstance = null;
 let showNTM = false;
 
 const METRICS = {
-  costNTC:    { label: 'Cost / X (NTC)',     money: true  },
-  costNTM:    { label: 'Cost / X (NTM)',     money: true,  ntm: true },
-  currInv:    { label: 'Current Inventory',  money: false },
-  reqInvNTM:  { label: 'Req. Inventory (NTM)', money: false },
+  costNTC:    { label: 'Cost / X (NTC)',       plain: 'Cost / X',       money: true  },
+  costNTM:    { label: 'Cost / X (NTM)',       money: true,  ntm: true },
+  currInv:    { label: 'Current Inventory',    money: false },
+  reqInvNTM:  { label: 'Req. Inventory (NTM)', plain: 'Req. Inventory', money: false },
   reqInvNTC:  { label: 'Req. Inventory (NTC)', money: false, ntm: true },
-  expInv:     { label: 'Expected Inventory', money: false },
-  days:       { label: 'Days Remaining',     money: false },
-  budgetNTC:  { label: 'Budget (NTC)',       money: true  },
-  budgetNTM:  { label: 'Budget (NTM)',       money: true,  ntm: true },
-  spentNTC:   { label: 'Spent (NTC)',        money: true  },
-  remaining:  { label: 'Budget Remaining',   money: true  },
+  expInv:     { label: 'Expected Inventory',   money: false },
+  days:       { label: 'Days Remaining',       money: false },
+  budgetNTC:  { label: 'Budget (NTC)',         plain: 'Budget',         money: true  },
+  budgetNTM:  { label: 'Budget (NTM)',         money: true,  ntm: true },
+  spentNTC:   { label: 'Spent (NTC)',          plain: 'Spent',          money: true  },
+  spentNTM:   { label: 'Spent (NTM)',          money: true,  ntm: true },
+  remaining:  { label: 'Remaining (NTM)',      plain: 'Remaining',      money: true  },
 };
+
+// Admin sees the NTM/NTC-qualified label; everyone else sees the plain one.
+function mlabel(key){
+  const m=METRICS[key];
+  if(!m)return key;
+  return showNTM ? m.label : (m.plain || m.label);
+}
 
 function rowKey(r){ return `${r.campaign}|||${r.platform}|||${r.objective||''}`; }
 
@@ -366,7 +374,10 @@ function buildCampaignSection(campName,data,idx){
       <td class="r"><span class="num">${fmtMoney(r.budgetNTC,r.currency)}</span></td>
       ${showNTM?`<td class="r"><span class="num">${fmtMoney(r.budgetNTM,r.currency)}</span></td>`:''}
       <td class="r"><span class="num">${fmtMoney(r.spentNTC,r.currency)}</span></td>
-      <td>${budgetCell(r.spentNTC,r.budgetNTC,r.remaining,r.currency)}</td>
+      ${showNTM?`<td class="r"><span class="num">${fmtMoney(r.spentNTM,r.currency)}</span></td>`:''}
+      <td>${showNTM
+        ? budgetCell(r.spentNTM,r.budgetNTM,r.remaining,r.currency)
+        : budgetCell(r.spentNTC,r.budgetNTC,r.remaining,r.currency)}</td>
       <td>${lnk}</td>
     </tr>`;
   }).join('');
@@ -383,17 +394,18 @@ function buildCampaignSection(campName,data,idx){
       <thead><tr>
         <th style="width:36px"></th>
         <th>Platform</th><th>Status</th><th>Start</th><th>End</th><th>Objective</th>
-        ${thMetric('Cost / X (NTC)','costNTC')}
-        ${showNTM?thMetric('Cost / X (NTM)','costNTM'):''}
+        ${thMetric(mlabel('costNTC'),'costNTC')}
+        ${showNTM?thMetric(mlabel('costNTM'),'costNTM'):''}
         ${thMetric('Current Inv.','currInv')}
-        ${thMetric('Req. Inv. (NTM)','reqInvNTM')}
+        ${thMetric(showNTM?'Req. Inv. (NTM)':'Req. Inventory','reqInvNTM')}
         ${showNTM?thMetric('Req. Inv. (NTC)','reqInvNTC'):''}
         ${thMetric('Expected Inv.','expInv')}
         ${thMetric('Days Left','days')}
-        ${thMetric('Budget (NTC)','budgetNTC')}
-        ${showNTM?thMetric('Budget (NTM)','budgetNTM'):''}
-        ${thMetric('Spent (NTC)','spentNTC')}
-        ${thMetric('Remaining','remaining','')}
+        ${thMetric(mlabel('budgetNTC'),'budgetNTC')}
+        ${showNTM?thMetric(mlabel('budgetNTM'),'budgetNTM'):''}
+        ${thMetric(mlabel('spentNTC'),'spentNTC')}
+        ${showNTM?thMetric(mlabel('spentNTM'),'spentNTM'):''}
+        ${thMetric(mlabel('remaining'),'remaining','')}
         <th></th>
       </tr></thead>
       <tbody>${tbody}</tbody>
@@ -555,7 +567,7 @@ function selectMetric(key){
 function renderChartSection(){
   document.getElementById('chart-section').style.display='block';
   const cfg=METRICS[selectedMetric];
-  document.getElementById('chart-title').textContent=`${cfg.label} by Platform & Objective`;
+  document.getElementById('chart-title').textContent=`${mlabel(selectedMetric)} by Platform & Objective`;
   document.getElementById('chart-sub').textContent=cfg.money?'Converted to selected display currency · Click campaign headers or pills to filter':'Summed across selected campaigns · Click campaign headers or pills to filter';
 
   // Build campaign group filter pills
