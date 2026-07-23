@@ -188,6 +188,7 @@ tbody tr:hover td:first-child{background:var(--accent-dim)}
       <div class="last-updated" id="last-updated">
         <span class="lu-dot"></span><span id="lu-text">Loading…</span>
       </div>
+      <span id="role-badge" style="display:none;margin-left:6px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.06em;background:var(--surface-2);border:1px solid var(--border-2);color:var(--text-2)"></span>
     </div>
     <div class="header-right">
       <div class="tog-group">
@@ -240,6 +241,21 @@ let selectedCampaigns = new Set();
 let selectedRows = new Set(); // row-level chart filter: "campaign|||platform|||objective"
 let selectedMetric = 'spentNTC';
 let chartInstance = null;
+let showNTM = false;
+
+const METRICS = {
+  costNTC:    { label: 'Cost / X (NTC)',     money: true  },
+  costNTM:    { label: 'Cost / X (NTM)',     money: true,  ntm: true },
+  currInv:    { label: 'Current Inventory',  money: false },
+  reqInvNTM:  { label: 'Req. Inventory (NTM)', money: false },
+  reqInvNTC:  { label: 'Req. Inventory (NTC)', money: false, ntm: true },
+  expInv:     { label: 'Expected Inventory', money: false },
+  days:       { label: 'Days Remaining',     money: false },
+  budgetNTC:  { label: 'Budget (NTC)',       money: true  },
+  budgetNTM:  { label: 'Budget (NTM)',       money: true,  ntm: true },
+  spentNTC:   { label: 'Spent (NTC)',        money: true  },
+  remaining:  { label: 'Budget Remaining',   money: true  },
+};
 
 function rowKey(r){ return `${r.campaign}|||${r.platform}|||${r.objective||''}`; }
 
@@ -254,21 +270,22 @@ function campRowState(campName){
   return 'partial';
 }
 
-const METRICS = {
-  costNTC:    { label: 'Cost / X (NTC)',     money: true  },
-  currInv:    { label: 'Current Inventory',  money: false },
-  reqInvNTM:  { label: 'Req. Inventory (NTM)', money: false },
-  expInv:     { label: 'Expected Inventory', money: false },
-  days:       { label: 'Days Remaining',     money: false },
-  budgetNTC:  { label: 'Budget (NTC)',       money: true  },
-  spentNTC:   { label: 'Spent (NTC)',        money: true  },
-  remaining:  { label: 'Budget Remaining',   money: true  },
-};
-
 // ── Crypto helpers ──
 function b64ToBytes(b64){const bin=atob(b64);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return bytes;}
 async function deriveKey(passcode,salt){const keyMaterial=await crypto.subtle.importKey('raw',new TextEncoder().encode(passcode),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},keyMaterial,{name:'AES-GCM',length:256},false,['decrypt']);}
 async function decryptPayload(encrypted,passcode){const salt=b64ToBytes(encrypted.salt),iv=b64ToBytes(encrypted.iv),ciphertext=b64ToBytes(encrypted.data);const key=await deriveKey(passcode,salt);const decrypted=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ciphertext);return JSON.parse(new TextDecoder().decode(decrypted));}
+
+// Tries the passcode against every role blob; returns the payload that decrypts.
+async function decryptAnyRole(fileJson, passcode){
+  const blobs = fileJson.roles
+    ? Object.values(fileJson.roles)
+    : [fileJson];               // fallback for the old single-payload format
+  for(const blob of blobs){
+    try{ return await decryptPayload(blob, passcode); }
+    catch(e){ /* wrong key for this blob, try the next */ }
+  }
+  throw new Error('BAD_PASSCODE');
+}
 
 // ── Gate ──
 async function checkPasscode(){
@@ -279,10 +296,10 @@ async function checkPasscode(){
   try{
     const res=await fetch(GITHUB_RAW_URL+'?t='+Date.now());
     if(!res.ok)throw new Error(`Could not reach data source (HTTP ${res.status})`);
-    const encrypted=await res.json();
+    const fileJson=await res.json();
     let data;
     try{
-      data=await decryptPayload(encrypted,passcode);
+      data=await decryptAnyRole(fileJson,passcode);
     }catch(decryptErr){
       throw new Error('Incorrect passcode.');
     }
@@ -340,11 +357,14 @@ function buildCampaignSection(campName,data,idx){
       <td style="font-size:11px;color:var(--text-2)">${fmtDate(r.end)||'—'}</td>
       <td><span class="obj">${r.objective||'<span class="dim">—</span>'}</span></td>
       <td class="r"><span class="num">${fmtCost(r.costNTC,r.currency)}</span></td>
+      ${showNTM?`<td class="r"><span class="num">${fmtCost(r.costNTM,r.currency)}</span></td>`:''}
       <td class="r"><span class="num">${fmt(r.currInv)}</span></td>
       <td class="r"><span class="num">${fmt(r.reqInvNTM)}</span></td>
+      ${showNTM?`<td class="r"><span class="num">${fmt(r.reqInvNTC)}</span></td>`:''}
       <td class="r"><span class="num">${fmt(r.expInv)}</span></td>
       <td class="r">${fmtDays(r.days)}</td>
       <td class="r"><span class="num">${fmtMoney(r.budgetNTC,r.currency)}</span></td>
+      ${showNTM?`<td class="r"><span class="num">${fmtMoney(r.budgetNTM,r.currency)}</span></td>`:''}
       <td class="r"><span class="num">${fmtMoney(r.spentNTC,r.currency)}</span></td>
       <td>${budgetCell(r.spentNTC,r.budgetNTC,r.remaining,r.currency)}</td>
       <td>${lnk}</td>
@@ -364,11 +384,14 @@ function buildCampaignSection(campName,data,idx){
         <th style="width:36px"></th>
         <th>Platform</th><th>Status</th><th>Start</th><th>End</th><th>Objective</th>
         ${thMetric('Cost / X (NTC)','costNTC')}
+        ${showNTM?thMetric('Cost / X (NTM)','costNTM'):''}
         ${thMetric('Current Inv.','currInv')}
         ${thMetric('Req. Inv. (NTM)','reqInvNTM')}
+        ${showNTM?thMetric('Req. Inv. (NTC)','reqInvNTC'):''}
         ${thMetric('Expected Inv.','expInv')}
         ${thMetric('Days Left','days')}
         ${thMetric('Budget (NTC)','budgetNTC')}
+        ${showNTM?thMetric('Budget (NTM)','budgetNTM'):''}
         ${thMetric('Spent (NTC)','spentNTC')}
         ${thMetric('Remaining','remaining','')}
         <th></th>
@@ -615,9 +638,16 @@ function updateChart(){
 // ── Data loading ──
 function ingestData(data){
   rows=data.rows||[];
+  showNTM=!!data.showNTM;
   selectedCampaigns=new Set();
   selectedRows=new Set();
   selectedMetric='spentNTC';
+  // Show the role on the header badge
+  const roleEl=document.getElementById('role-badge');
+  if(roleEl){
+    roleEl.textContent=data.role?data.role.toUpperCase():'';
+    roleEl.style.display=data.role?'inline-block':'none';
+  }
   populateClients();
   if(data.updated_at) setLastUpdated(data.updated_at);
   document.getElementById('client-sel').value='';
@@ -636,8 +666,8 @@ async function loadFromGitHub(){
   try{
     const res=await fetch(GITHUB_RAW_URL+'?t='+Date.now());
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
-    const encrypted=await res.json();
-    const data=await decryptPayload(encrypted,passcode);
+    const fileJson=await res.json();
+    const data=await decryptAnyRole(fileJson,passcode);
     ingestData(data);
   }catch(e){showError(`Failed to load: ${e.message}`);}
 }
